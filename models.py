@@ -105,14 +105,16 @@ class OGN(GN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
     
-    def loss(self, g, augment=True, square=False, augmentation=3, **kwargs):
-        if square:
-            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
-        else:
-            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment)))
+    def loss(self, g, loss_type= 'abs'):
+        if loss_type == 'square':
+            return torch.sum((g.y - self.just_derivative(g))**2)
+        if loss_type == 'abs':
+            return torch.sum(torch.abs(g.y - self.just_derivative(g)))
+        if loss_type == 'rad': 
+            return torch.sum(torch.sqrt(torch.abs(g.y - self.just_derivative(g))+0.01))
 
 
-#modelli personalizzati:
+#Other Models:
 ###################################################################################################################################################################
 
 class our_GN(MessagePassing):
