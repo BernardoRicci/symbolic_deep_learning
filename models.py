@@ -105,13 +105,21 @@ class OGN(GN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
     
-    def loss(self, g, loss_type= 'abs'):
+    def huber_loss(prediction, target, delta):
+	    absolute_difference = torch.abs(prediction - target)
+	    quadratic_term = 0.5 * (absolute_difference ** 2)
+	    linear_term = delta * (absolute_difference - 0.5 * delta)
+	    loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
+	    return torch.mean(loss)
+
+                       
+    def loss(self, g, loss_type= 'mae'):
         if loss_type == 'square':
-            return torch.sum((g.y - self.just_derivative(g))**2)
-        if loss_type == 'abs':
-            return torch.sum(torch.abs(g.y - self.just_derivative(g)))
-        if loss_type == 'rad': 
-            return torch.sum(torch.sqrt(torch.abs(g.y - self.just_derivative(g))+0.01))
+            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+        if loss_type == 'mae':
+            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+        if loss_type == 'huber':
+            return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
 
 
 #Personalized Models:
@@ -187,13 +195,21 @@ class PM_GN(GN_plusminus):
                 x=x)
 
                        
-    def loss(self, g, loss_type= 'abs'):
+    def huber_loss(prediction, target, delta):
+	    absolute_difference = torch.abs(prediction - target)
+	    quadratic_term = 0.5 * (absolute_difference ** 2)
+	    linear_term = delta * (absolute_difference - 0.5 * delta)
+	    loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
+	    return torch.mean(loss)
+
+                       
+    def loss(self, g, loss_type= 'mae'):
         if loss_type == 'square':
-            return torch.sum((g.y - self.just_derivative(g))**2)
-        if loss_type == 'abs':
-            return torch.sum(torch.abs(g.y - self.just_derivative(g)))
-        if loss_type == 'rad': 
-            return torch.sum(torch.sqrt(torch.abs(g.y - self.just_derivative(g))+0.01))
+            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+        if loss_type == 'mae':
+            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+        if loss_type == 'huber':
+            return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
 
 
 
@@ -267,11 +283,18 @@ class SNAKE_GN(GN_snake):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
 
+    def huber_loss(prediction, target, delta):
+	    absolute_difference = torch.abs(prediction - target)
+	    quadratic_term = 0.5 * (absolute_difference ** 2)
+	    linear_term = delta * (absolute_difference - 0.5 * delta)
+	    loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
+	    return torch.mean(loss)
+
                        
-    def loss(self, g, loss_type= 'abs'):
+    def loss(self, g, loss_type= 'mae'):
         if loss_type == 'square':
-            return torch.sum((g.y - self.just_derivative(g))**2)
-        if loss_type == 'abs':
-            return torch.sum(torch.abs(g.y - self.just_derivative(g)))
-        if loss_type == 'rad': 
-            return torch.sum(torch.sqrt(torch.abs(g.y - self.just_derivative(g))+0.01))
+            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+        if loss_type == 'mae':
+            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+        if loss_type == 'huber':
+            return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
