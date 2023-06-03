@@ -114,7 +114,7 @@ class OGN(GN):
 
                        
     def loss(self, g, loss_type= 'mae'):
-        if loss_type == 'square':
+        if loss_type == 'mse':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'mae':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
@@ -204,7 +204,7 @@ class PM_GN(GN_plusminus):
 
                        
     def loss(self, g, loss_type= 'mae'):
-        if loss_type == 'square':
+        if loss_type == 'mse':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'mae':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
@@ -292,7 +292,7 @@ class SNAKE_GN(GN_snake):
 
                        
     def loss(self, g, loss_type= 'mae'):
-        if loss_type == 'square':
+        if loss_type == 'mse':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'mae':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
