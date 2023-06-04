@@ -248,47 +248,45 @@ class GATLayer(MessagePassing):
         return aggr_out.view(-1, self.out_channels * self.num_heads)
 
 class GAT_GN(nn.Module):
-    def __init__(self, n_f, edge_index, hidden=300, out_dim=100, num_heads=4, num_layers=3):
-        super(GAT_GN, self).__init__()
-        self.num_layers = num_layers
-        self.layers = nn.ModuleList()
-        self.edge_index = edge_index
+	def __init__(self, n_f, edge_index, hidden=300, out_dim=100, num_heads=4, num_layers=3):
+	super(GAT_GN, self).__init__()
+	self.num_layers = num_layers
+	self.layers = nn.ModuleList()
+	self.edge_index = edge_index
 
-        self.layers.append(GATLayer(n_f, hidden, num_heads))
+	self.layers.append(GATLayer(n_f, hidden, num_heads))
 
-        for _ in range(num_layers - 2):
-            self.layers.append(GATLayer(hidden * num_heads, hidden, num_heads))
+	for _ in range(num_layers - 2):
+		self.layers.append(GATLayer(hidden * num_heads, hidden, num_heads))
 
-        self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
+	self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
 
-    def just_derivative(self, g, augment=False, augmentation=3):
-        #x is [n, n_f]f
-        x = g.x
-        ndim = self.ndim
-        if augment:
-            augmentation = torch.randn(1, ndim)*augmentation
-            augmentation = augmentation.repeat(len(x), 1).to(x.device)
-            x = x.index_add(1, torch.arange(ndim).to(x.device), augmentation)
-        
-        edge_index = g.edge_index
-        
-        return self.propagate(
-                edge_index, size=(x.size(0), x.size(0)),
-                x=x)
+	def just_derivative(self, g, augment=False, augmentation=3):
+		#x is [n, n_f]f
+		x = g.x
+		ndim = self.ndim
+		if augment:
+			augmentation = torch.randn(1, ndim)*augmentation
+			augmentation = augmentation.repeat(len(x), 1).to(x.device)
+			x = x.index_add(1, torch.arange(ndim).to(x.device), augmentation)
 
-                       
-    def huber_loss(prediction, target, delta):
-	    absolute_difference = torch.abs(prediction - target)
-	    quadratic_term = 0.5 * (absolute_difference ** 2)
-	    linear_term = delta * (absolute_difference - 0.5 * delta)
-	    loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
-	    return torch.mean(loss)
+		edge_index = g.edge_index
 
-                       
-    def loss(self, g, loss_type= 'mae'):
-        if loss_type == 'mse':
-            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
-        if loss_type == 'mae':
-            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
-        if loss_type == 'huber':
-            return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
+		return self.propagate(edge_index, size=(x.size(0), x.size(0)),x=x)
+
+
+def huber_loss(prediction, target, delta):
+	absolute_difference = torch.abs(prediction - target)
+	quadratic_term = 0.5 * (absolute_difference ** 2)
+	linear_term = delta * (absolute_difference - 0.5 * delta)
+	loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
+	return torch.mean(loss)
+
+
+def loss(self, g, loss_type= 'mae'):
+	if loss_type == 'mse':
+		return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+	if loss_type == 'mae':
+		return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+	if loss_type == 'huber':
+		return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
