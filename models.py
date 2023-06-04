@@ -249,17 +249,17 @@ class GATLayer(MessagePassing):
 
 class GAT_GN(nn.Module):
 	def __init__(self, n_f, edge_index, hidden=300, out_dim=100, num_heads=4, num_layers=3):
-	super(GAT_GN, self).__init__()
-	self.num_layers = num_layers
-	self.layers = nn.ModuleList()
-	self.edge_index = edge_index
+		super(GAT_GN, self).__init__()
+		self.num_layers = num_layers
+		self.layers = nn.ModuleList()
+		self.edge_index = edge_index
 
-	self.layers.append(GATLayer(n_f, hidden, num_heads))
+		self.layers.append(GATLayer(n_f, hidden, num_heads))
 
-	for _ in range(num_layers - 2):
-		self.layers.append(GATLayer(hidden * num_heads, hidden, num_heads))
+		for _ in range(num_layers - 2):
+			self.layers.append(GATLayer(hidden * num_heads, hidden, num_heads))
 
-	self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
+		self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
 
 	def just_derivative(self, g, augment=False, augmentation=3):
 		#x is [n, n_f]f
