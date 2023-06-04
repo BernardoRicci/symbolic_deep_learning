@@ -261,7 +261,7 @@ class GAT_GN(nn.Module):
 
         self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
 
-     def just_derivative(self, g, augment=False, augmentation=3):
+    def just_derivative(self, g, augment=False, augmentation=3):
         #x is [n, n_f]f
         x = g.x
         ndim = self.ndim
