@@ -275,18 +275,18 @@ class GAT_GN(nn.Module):
 		return self.propagate(edge_index, size=(x.size(0), x.size(0)),x=x)
 
 
-def huber_loss(prediction, target, delta):
-	absolute_difference = torch.abs(prediction - target)
-	quadratic_term = 0.5 * (absolute_difference ** 2)
-	linear_term = delta * (absolute_difference - 0.5 * delta)
-	loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
-	return torch.mean(loss)
+	def huber_loss(prediction, target, delta):
+		absolute_difference = torch.abs(prediction - target)
+		quadratic_term = 0.5 * (absolute_difference ** 2)
+		linear_term = delta * (absolute_difference - 0.5 * delta)
+		loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
+		return torch.mean(loss)
 
 
-def loss(self, g, loss_type= 'mae'):
-	if loss_type == 'mse':
-		return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
-	if loss_type == 'mae':
-		return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
-	if loss_type == 'huber':
-		return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
+	def loss(self, g, loss_type= 'mae'):
+		if loss_type == 'mse':
+			return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+		if loss_type == 'mae':
+			return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+		if loss_type == 'huber':
+			return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
