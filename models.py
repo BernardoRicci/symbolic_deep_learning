@@ -3,9 +3,10 @@ import torch
 from torch import nn
 from torch.functional import F
 from torch.optim import Adam
-from torch_geometric.nn import MetaLayer, MessagePassing
+from torch_geometric.nn import MetaLayer, MessagePassing, GATConv
 from torch.nn import Sequential as Seq, Linear as Lin, ReLU, Softplus
 from torch.autograd import Variable, grad
+from torch_geometric.utils import add_self_loops, softmax
 
 def make_packer(n, n_f):
     def pack(x):
@@ -140,7 +141,7 @@ class GN_plusminus(MessagePassing):
       ReLU(),
       Lin(int(hidden*3/2), hidden),
       ReLU(),
-      Lin(hidden, int(hidden/2))
+      Lin(hidden, int(hidden/3))
     )
   
         self.node_fnc = Seq(
@@ -213,62 +214,55 @@ class PM_GN(GN_plusminus):
 
 
 
-class GN_snake(MessagePassing):
-    def __init__(self, n_f, msg_dim, ndim, hidden=300, aggr='add'):
-        super(GN_snake, self).__init__(aggr=aggr)# "Add" aggregation.
+class GATLayer(MessagePassing):
+    def __init__(self, in_channels, out_channels, num_heads=1):
+        super(GATLayer, self).__init__(aggr='add')
 
-        self.msg_fnc = Seq(
-      Lin(2*n_f, hidden),
-      ReLU(),
-      Lin(hidden, int(hidden*3/2)),
-      ReLU(),
-      Lin(int(hidden*3/2),hidden),
-      ReLU(),
-      Lin(hidden, int(hidden/2)),
-      ReLU(),
-      Lin(int(hidden/2), hidden),
-      ReLU(),
-      Lin(hidden, int(hidden/2))
-    )
-  
-        self.node_fnc = Seq(
-      Lin(msg_dim+n_f, hidden),
-      ReLU(),
-      Lin(hidden, hidden),
-      ReLU(),
-      Lin(hidden, hidden),
-      ReLU(),
-      Lin(hidden, ndim)
-      )
-    
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.num_heads = num_heads
+
+        self.linear = nn.Linear(in_channels, out_channels * num_heads, bias=False)
+        self.att = nn.Parameter(torch.Tensor(1, num_heads, 2 * out_channels))
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.xavier_uniform_(self.linear.weight)
+        nn.init.xavier_uniform_(self.att)
+
     def forward(self, x, edge_index):
-        #x is [n, n_f]
-        x = x
-        return self.propagate(edge_index, size=(x.size(0), x.size(0)), x=x)
-    
-    def message(self, x_i, x_j):
-        # x_i has shape [n_e, n_f]; x_j has shape [n_e, n_f]
-        tmp = torch.cat([x_i, x_j], dim=1)  # tmp has shape [E, 2 * in_channels]
-        return self.msg_fnc(tmp)
-    
-    def update(self, aggr_out, x=None):
-        # aggr_out has shape [n, msg_dim]
+        x = self.linear(x).view(-1, self.num_heads, self.out_channels)
 
-        tmp = torch.cat([x, aggr_out], dim=1)
-        return self.node_fnc(tmp) #[n, nupdate]
+        edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))
+        return self.propagate(edge_index, x=x)
 
+    def message(self, x_i, x_j, edge_index_i, size_i):
+        alpha = torch.cat([x_i, x_j], dim=-1)
+        alpha = (alpha * self.att).sum(dim=-1)
+        alpha = softmax(alpha, edge_index_i, size_i)
 
-class SNAKE_GN(GN_snake):
-    def __init__(self, n_f, msg_dim, ndim, dt,
-        edge_index, aggr='add', hidden=300, nt=1):
+        return x_j * alpha.view(-1, self.num_heads, 1)
 
-        super(SNAKE_GN, self).__init__(n_f, msg_dim, ndim, hidden=hidden, aggr=aggr)
-        self.dt = dt
-        self.nt = nt
-        self.edge_index = edge_index
-        self.ndim = ndim
+    def update(self, aggr_out):
+        return aggr_out.view(-1, self.out_channels * self.num_heads)
 
-    def just_derivative(self, g, augment=False, augmentation=3):
+class GAT_GN(nn.Module):
+    def __init__(self, n_f, edge_index, hidden=300, out_dim=100, num_heads=4, num_layers=3):
+        super(GAT_GN, self).__init__()
+
+        self.num_layers = num_layers
+        self.layers = nn.ModuleList()
+	self.edge_index = edge_index
+
+        self.layers.append(GATLayer(n_f, hidden, num_heads))
+
+        for _ in range(num_layers - 2):
+            self.layers.append(GATLayer(hidden * num_heads, hidden, num_heads))
+
+        self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
+
+     def just_derivative(self, g, augment=False, augmentation=3):
         #x is [n, n_f]f
         x = g.x
         ndim = self.ndim
@@ -283,6 +277,7 @@ class SNAKE_GN(GN_snake):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
 
+                       
     def huber_loss(prediction, target, delta):
 	    absolute_difference = torch.abs(prediction - target)
 	    quadratic_term = 0.5 * (absolute_difference ** 2)
