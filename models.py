@@ -248,11 +248,14 @@ class GATLayer(MessagePassing):
         return aggr_out.view(-1, self.out_channels * self.num_heads)
 
 class GAT_GN(nn.Module):
-	def __init__(self, n_f, edge_index, hidden=300, out_dim=100, num_heads=4, num_layers=3):
+	def __init__(self, n_f, msg_dim, ndim, dt, edge_index, aggr='add', hidden=300, nt=1, out_dim=100, num_heads=4, num_layers=3):
 		super(GAT_GN, self).__init__()
 		self.num_layers = num_layers
 		self.layers = nn.ModuleList()
+		self.dt = dt
+		self.nt = nt
 		self.edge_index = edge_index
+		self.ndim = ndim
 
 		self.layers.append(GATLayer(n_f, hidden, num_heads))
 
