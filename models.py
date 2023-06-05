@@ -114,12 +114,12 @@ class OGN(GN):
 	    return torch.mean(loss)
 
                        
-    def loss(self, g, loss_type= 'mae'):
-        if loss_type == 'mse':
+    def loss(self, g, loss_type= 'MAE'):
+        if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
-        if loss_type == 'mae':
+        if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
-        if loss_type == 'huber':
+        if loss_type == 'HUBER':
             return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
 
 
@@ -204,92 +204,63 @@ class PM_GN(GN_plusminus):
 	    return torch.mean(loss)
 
                        
-    def loss(self, g, loss_type= 'mae'):
-        if loss_type == 'mse':
+    def loss(self, g, loss_type= 'MAE'):
+        if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
-        if loss_type == 'mae':
+        if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
-        if loss_type == 'huber':
+        if loss_type == 'HUBER':
             return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
 
 
+class GAT_GN(GN):
+    def __init__(self, n_f, msg_dim, ndim, hidden=300, aggr='add', heads=1):
+        super(GAT_GN, self).__init__(n_f, msg_dim, ndim, hidden, aggr)
+        self.heads = heads
 
-class GATLayer(MessagePassing):
-    def __init__(self, in_channels, out_channels, num_heads=1):
-        super(GATLayer, self).__init__(aggr='add')
+        self.att = Seq(
+            Lin(2 * n_f, 1),  # Attention mechanism
+            Seq(Lin(1, heads), Softplus()),  # Apply Softplus activation
+            Seq(Lin(heads, heads))  # Linear projection for each head
+        )
 
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.num_heads = num_heads
+    def message(self, x_i, x_j):
+        tmp = torch.cat([x_i, x_j], dim=1)  # Concatenate input features
+        attention = self.att(tmp).squeeze(2)  # Compute attention weights
+        return self.msg_fnc(tmp) * softmax(attention, x_i.size(0))
 
-        self.linear = nn.Linear(in_channels, out_channels * num_heads, bias=False)
-        self.att = nn.Parameter(torch.Tensor(1, num_heads, 2 * out_channels))
+    def update(self, aggr_out, x=None):
+        tmp = torch.cat([x, aggr_out], dim=1)  # Concatenate node features
+        return self.node_fnc(tmp)
 
-        self.reset_parameters()
+   def just_derivative(self, g, augment=False, augmentation=3):
+        #x is [n, n_f]f
+        x = g.x
+        ndim = self.ndim
+        if augment:
+            augmentation = torch.randn(1, ndim)*augmentation
+            augmentation = augmentation.repeat(len(x), 1).to(x.device)
+            x = x.index_add(1, torch.arange(ndim).to(x.device), augmentation)
+        
+        edge_index = g.edge_index
+        
+        return self.propagate(
+                edge_index, size=(x.size(0), x.size(0)),
+                x=x)
 
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.linear.weight)
-        nn.init.xavier_uniform_(self.att)
+                       
+    def huber_loss(prediction, target, delta):
+	    absolute_difference = torch.abs(prediction - target)
+	    quadratic_term = 0.5 * (absolute_difference ** 2)
+	    linear_term = delta * (absolute_difference - 0.5 * delta)
+	    loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
+	    return torch.mean(loss)
 
-    def forward(self, x, edge_index):
-        x = self.linear(x).view(-1, self.num_heads, self.out_channels)
-
-        edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))
-        return self.propagate(edge_index, x=x)
-
-    def message(self, x_i, x_j, edge_index_i, size_i):
-        alpha = torch.cat([x_i, x_j], dim=-1)
-        alpha = (alpha * self.att).sum(dim=-1)
-        alpha = softmax(alpha, edge_index_i, size_i)
-
-        return x_j * alpha.view(-1, self.num_heads, 1)
-
-    def update(self, aggr_out):
-        return aggr_out.view(-1, self.out_channels * self.num_heads)
-
-class GAT_GN(nn.Module):
-	def __init__(self, n_f, msg_dim, ndim, dt, edge_index, aggr='add', hidden=300, nt=1, out_dim=100, num_heads=4, num_layers=3):
-		super(GAT_GN, self).__init__()
-		self.num_layers = num_layers
-		self.layers = nn.ModuleList()
-		self.dt = dt
-		self.nt = nt
-		self.edge_index = edge_index
-		self.ndim = ndim
-
-		self.layers.append(GATLayer(n_f, hidden, num_heads))
-
-		for _ in range(num_layers - 2):
-			self.layers.append(GATLayer(hidden * num_heads, hidden, num_heads))
-
-		self.layers.append(GATLayer(hidden * num_heads, out_dim, 1))
-
-	def just_derivative(self, g, augment=False, augmentation=3):
-		#x is [n, n_f]f
-		x = g.x
-		ndim = self.ndim
-		if augment:
-			augmentation = torch.randn(1, ndim)*augmentation
-			augmentation = augmentation.repeat(len(x), 1).to(x.device)
-			x = x.index_add(1, torch.arange(ndim).to(x.device), augmentation)
-
-		edge_index = g.edge_index
-
-		return self.propagate(edge_index, size=(x.size(0), x.size(0)),x=x)
-
-
-	def huber_loss(prediction, target, delta):
-		absolute_difference = torch.abs(prediction - target)
-		quadratic_term = 0.5 * (absolute_difference ** 2)
-		linear_term = delta * (absolute_difference - 0.5 * delta)
-		loss = torch.where(absolute_difference <= delta, quadratic_term, linear_term)
-		return torch.mean(loss)
-
-
-	def loss(self, g, loss_type= 'mae'):
-		if loss_type == 'mse':
-			return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
-		if loss_type == 'mae':
-			return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
-		if loss_type == 'huber':
-			return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
+                       
+    def loss(self, g, loss_type= 'MAE'):
+        if loss_type == 'MSE':
+            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+        if loss_type == 'MAE':
+            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+        if loss_type == 'HUBER':
+            return huber_loss(g.y, self.just_derivative(g, augment=augment, augmentation=augmentation), delta)
