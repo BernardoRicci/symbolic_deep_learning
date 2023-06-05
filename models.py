@@ -217,7 +217,7 @@ class GAT_GN(GN):
     def __init__(self, n_f, msg_dim, ndim, dt, edge_index, aggr='add', hidden=300, nt=1, heads=1):
         super(GAT_GN, self).__init__(n_f, msg_dim, ndim, hidden, aggr)
         self.heads = heads
-	self.dt = dt
+        self.dt = dt
         self.nt = nt
         self.edge_index = edge_index
         self.ndim = ndim
