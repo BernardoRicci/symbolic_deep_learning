@@ -197,30 +197,71 @@ class PM_GN(GN_plusminus):
             return torch.nn.HuberLoss()
 
 
-class GAT_GN(GN):
-    def __init__(self, n_f, msg_dim, ndim, dt, edge_index, aggr='add', hidden=300, nt=1, heads=1):
-        super(GAT_GN, self).__init__(n_f, msg_dim, ndim, hidden, aggr)
-        self.heads = heads
+class Custom_GN(MessagePassing):
+    def __init__(self, n_f, msg_dim, ndim, hidden=300, aggr='add'):
+        super(Custom_GN, self).__init__(aggr=aggr)  # "Add" aggregation.
+        # self.msg_fnc = Seq(
+        #     Lin(2*n_f, hidden),
+        #     ReLU(),
+        #     Lin(hidden, hidden),
+        #     ReLU(),
+        #     Lin(hidden, hidden),
+        #     ReLU(),
+        #     Lin(hidden, msg_dim)
+        # )
+
+        self.node_fnc = Seq(
+            Lin(msg_dim+n_f, hidden),
+            ReLU(),
+            Lin(hidden, hidden),
+            ReLU(),
+            Lin(hidden, hidden),
+            ReLU(),
+            Lin(hidden, ndim)
+        )
+        self.msg_input_lin = Lin(2*n_f, hidden)
+        self.msg_inverse = Lin(hidden, hidden)
+        self.msg_inverse_quad = Lin(hidden, hidden)
+        self.msg_out = Lin(2*hidden, msg_dim)
+        self.activation = ReLU()
+
+
+    def msg_fnc(self,x):
+        x = self.msg_input_lin(x)
+        x = self.activation(x)
+        inv = 1/self.msg_inverse(x)
+        inv_quad = 1/self.msg_inverse_quad(x)
+        concat = torch.cat([inv, inv_quad], dim=1)#CONCATENARE inv e inv_quad in modo sensato: se hai settato hidden =100 allora avrai inv e inv_quad = N*100, dove N sono numero di punti che hai dato in input nel batch. Out deve avere dimensione N*200
+        out = self.msg_out(concat)
+        return out
+    
+    def forward(self, x, edge_index):
+          #x is [n, n_f]
+          x = x
+          return self.propagate(edge_index, size=(x.size(0), x.size(0)), x=x)
+
+    def message(self, x_i, x_j):
+        # x_i has shape [n_e, n_f]; x_j has shape [n_e, n_f]
+        tmp = torch.cat([x_i, x_j], dim=1)  # tmp has shape [E, 2 * in_channels]
+        return self.msg_fnc(tmp)
+
+    def update(self, aggr_out, x=None):
+        # aggr_out has shape [n, msg_dim]
+
+        tmp = torch.cat([x, aggr_out], dim=1)
+        return self.node_fnc(tmp) #[n, nupdate]
+
+
+class CUST_GN(Custom_GN):
+    def __init__(self, n_f, msg_dim, ndim, dt,
+        edge_index, aggr='add', hidden=300, nt=1):
+
+        super(CUST_GN, self).__init__(n_f, msg_dim, ndim, hidden=hidden, aggr=aggr)
         self.dt = dt
         self.nt = nt
         self.edge_index = edge_index
         self.ndim = ndim
 
-        self.att = Seq(
-            Lin(2 * n_f, 1),  # Attention mechanism
-            Seq(Lin(1, heads), Softplus()),  # Apply Softplus activation
-            Seq(Lin(heads, heads))  # Linear projection for each head
-        )
-	
-    def message(self, x_i, x_j):
-        tmp = torch.cat([x_i, x_j], dim=1)  # Concatenate input features
-        attention = self.att(tmp).squeeze(2)  # Compute attention weights
-        return self.msg_fnc(tmp) * softmax(attention, x_i.size(0))
-
-    def update(self, aggr_out, x=None):
-        tmp = torch.cat([x, aggr_out], dim=1)  # Concatenate node features
-        return self.node_fnc(tmp)
-    
     def just_derivative(self, g, augment=False, augmentation=3):
         #x is [n, n_f]f
         x = g.x
@@ -235,7 +276,7 @@ class GAT_GN(GN):
         return self.propagate(
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
-                      
+
                        
     def loss(self, g, loss_type= 'MAE'):
         if loss_type == 'MSE':
@@ -244,3 +285,6 @@ class GAT_GN(GN):
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
             return torch.nn.HuberLoss()
+
+
+
