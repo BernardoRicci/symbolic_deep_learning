@@ -232,7 +232,7 @@ class GAT_GN(GN):
     def update(self, aggr_out, x=None):
         tmp = torch.cat([x, aggr_out], dim=1)  # Concatenate node features
         return self.node_fnc(tmp)
-
+    
     def just_derivative(self, g, augment=False, augmentation=3):
         #x is [n, n_f]f
         x = g.x
@@ -247,7 +247,6 @@ class GAT_GN(GN):
         return self.propagate(
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
-
                        
     def huber_loss(prediction, target, delta):
 	    absolute_difference = torch.abs(prediction - target)
