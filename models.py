@@ -233,7 +233,7 @@ class GAT_GN(GN):
         tmp = torch.cat([x, aggr_out], dim=1)  # Concatenate node features
         return self.node_fnc(tmp)
 
-   def just_derivative(self, g, augment=False, augmentation=3):
+    def just_derivative(self, g, augment=False, augmentation=3):
         #x is [n, n_f]f
         x = g.x
         ndim = self.ndim
