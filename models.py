@@ -214,16 +214,20 @@ class PM_GN(GN_plusminus):
 
 
 class GAT_GN(GN):
-    def __init__(self, n_f, msg_dim, ndim, hidden=300, aggr='add', heads=1):
+    def __init__(self, n_f, msg_dim, ndim, dt, edge_index, aggr='add', hidden=300, nt=1, heads=1):
         super(GAT_GN, self).__init__(n_f, msg_dim, ndim, hidden, aggr)
         self.heads = heads
+	self.dt = dt
+        self.nt = nt
+        self.edge_index = edge_index
+        self.ndim = ndim
 
         self.att = Seq(
             Lin(2 * n_f, 1),  # Attention mechanism
             Seq(Lin(1, heads), Softplus()),  # Apply Softplus activation
             Seq(Lin(heads, heads))  # Linear projection for each head
         )
-
+	
     def message(self, x_i, x_j):
         tmp = torch.cat([x_i, x_j], dim=1)  # Concatenate input features
         attention = self.att(tmp).squeeze(2)  # Compute attention weights
