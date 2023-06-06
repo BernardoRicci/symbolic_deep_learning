@@ -112,7 +112,9 @@ class OGN(GN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            return torch.nn.HuberLoss()
+            criterion = torch.nn.HuberLoss()
+            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
+            return criterion(g.y, predicted)
 
 
 #Personalized Models:
@@ -194,7 +196,9 @@ class PM_GN(GN_plusminus):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            return torch.nn.HuberLoss()
+            criterion = torch.nn.HuberLoss()
+            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
+            return criterion(g.y, predicted)
 
 
 class Custom_GN(MessagePassing):
@@ -284,7 +288,9 @@ class CUST_GN(Custom_GN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            return torch.nn.HuberLoss()
+            criterion = torch.nn.HuberLoss()
+            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
+            return criterion(g.y, predicted)
 
 
 
