@@ -106,7 +106,7 @@ class OGN(GN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
                        
-    def loss(self, g, loss_type= 'MAE'):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
@@ -188,7 +188,7 @@ class PM_GN(GN_plusminus):
                 x=x)
 
                        
-    def loss(self, g, loss_type= 'MAE'):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
@@ -278,7 +278,7 @@ class CUST_GN(Custom_GN):
                 x=x)
 
                        
-    def loss(self, g, loss_type= 'MAE'):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
