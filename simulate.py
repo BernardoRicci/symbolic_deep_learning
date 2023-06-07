@@ -15,6 +15,10 @@ from celluloid import Camera
 s_ = onp.s_
 tqdm = lambda _: _
 
+jax.config.update('jax_platform_name', 'cpu')
+# before execute any computation / allocation
+print(jax.numpy.ones(3).device())
+
 def make_transparent_color(ntimes, fraction):
   rgba = onp.ones((ntimes, 4))
   alpha = onp.linspace(0, 1, ntimes)[:, np.newaxis]
