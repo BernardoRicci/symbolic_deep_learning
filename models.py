@@ -117,6 +117,95 @@ class OGN(GN):
             return criterion(g.y, predicted)
 
 
+class varGN(MessagePassing):
+    def __init__(self, n_f, msg_dim, ndim, hidden=300, aggr='add'):
+        super(varGN, self).__init__(aggr=aggr)  # "Add" aggregation.
+        self.msg_fnc = Seq(
+            Lin(2*n_f, hidden),
+            ReLU(),
+            Lin(hidden, hidden),
+            ReLU(),
+            Lin(hidden, hidden),
+            ReLU(),
+#             Lin(hidden, hidden),
+#             ReLU(),
+            Lin(hidden, msg_dim*2) #mu, logvar
+        )
+        
+        self.node_fnc = Seq(
+            Lin(msg_dim+n_f, hidden),
+            ReLU(),
+            Lin(hidden, hidden),
+            ReLU(),
+            Lin(hidden, hidden),
+            ReLU(),
+#             Lin(hidden, hidden),
+#             ReLU(),
+            Lin(hidden, ndim)
+        )
+        self.sample = True
+    
+    #[docs]
+    def forward(self, x, edge_index):
+        #x is [n, n_f]
+        x = x
+        return self.propagate(edge_index, size=(x.size(0), x.size(0)), x=x)
+      
+    def message(self, x_i, x_j):
+        # x_i has shape [n_e, n_f]; x_j has shape [n_e, n_f]
+        tmp = torch.cat([x_i, x_j], dim=1)  # tmp has shape [E, 2 * in_channels]
+        raw_msg = self.msg_fnc(tmp)
+        mu = raw_msg[:, 0::2]
+        logvar = raw_msg[:, 1::2]
+        actual_msg = mu
+        if self.sample:
+            actual_msg += torch.randn(mu.shape).to(x_i.device)*torch.exp(logvar/2)
+
+        return actual_msg
+    
+    def update(self, aggr_out, x=None):
+        # aggr_out has shape [n, msg_dim]
+
+        tmp = torch.cat([x, aggr_out], dim=1)
+        return self.node_fnc(tmp) #[n, nupdate]
+
+
+class varOGN(varGN):
+    def __init__(
+		self, n_f, msg_dim, ndim, dt,
+		edge_index, aggr='add', hidden=300, nt=1):
+
+        super(varOGN, self).__init__(n_f, msg_dim, ndim, hidden=hidden, aggr=aggr)
+        self.dt = dt
+        self.nt = nt
+        self.edge_index = edge_index
+        self.ndim = ndim
+    
+    def just_derivative(self, g, augment=False):
+        #x is [n, n_f]f
+        x = g.x
+        ndim = self.ndim
+        if augment:
+            augmentation = torch.randn(1, ndim)*3
+            augmentation = augmentation.repeat(len(x), 1).to(x.device)
+            x = x.index_add(1, torch.arange(ndim).to(x.device), augmentation)
+        
+        edge_index = g.edge_index
+        
+        return self.propagate(
+                edge_index, size=(x.size(0), x.size(0)),
+                x=x)
+    
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
+        if loss_type == 'MSE':
+            return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
+        if loss_type == 'MAE':
+            return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
+        if loss_type == 'HUBER':
+            criterion = torch.nn.HuberLoss()
+            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
+            return criterion(g.y, predicted)
+
 #Personalized Models:
 ###################################################################################################################################################################
 
