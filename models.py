@@ -113,6 +113,8 @@ class OGN(GN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
+            y_true = g.y
+            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
             residual = torch.abs(y_true - y_pred)
             condition = residual < delta
             squared_loss = 0.5 * torch.pow(residual, 2)
@@ -206,12 +208,15 @@ class varOGN(varGN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
+            y_true = g.y
+            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
             residual = torch.abs(y_true - y_pred)
             condition = residual < delta
             squared_loss = 0.5 * torch.pow(residual, 2)
             linear_loss = delta * (residual - 0.5 * delta)
             loss = torch.where(condition, squared_loss, linear_loss)
             return torch.sum(loss)
+
 
 #Personalized Models:
 ###################################################################################################################################################################
@@ -292,12 +297,15 @@ class PM_GN(GN_plusminus):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
+            y_true = g.y
+            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
             residual = torch.abs(y_true - y_pred)
             condition = residual < delta
             squared_loss = 0.5 * torch.pow(residual, 2)
             linear_loss = delta * (residual - 0.5 * delta)
             loss = torch.where(condition, squared_loss, linear_loss)
             return torch.sum(loss)
+
 
 
 class Custom_GN(MessagePassing):
@@ -387,9 +395,12 @@ class CUST_GN(Custom_GN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
+            y_true = g.y
+            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
             residual = torch.abs(y_true - y_pred)
             condition = residual < delta
             squared_loss = 0.5 * torch.pow(residual, 2)
             linear_loss = delta * (residual - 0.5 * delta)
             loss = torch.where(condition, squared_loss, linear_loss)
             return torch.sum(loss)
+
