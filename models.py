@@ -1,9 +1,10 @@
 import numpy as np
 import torch
+import torch.nn.functional as F#
 from torch import nn
 from torch.functional import F
 from torch.optim import Adam
-from torch_geometric.nn import MetaLayer, MessagePassing, GATConv
+from torch_geometric.nn import MetaLayer, MessagePassing
 from torch.nn import Sequential as Seq, Linear as Lin, ReLU, Softplus
 from torch.autograd import Variable, grad
 from torch_geometric.utils import add_self_loops, softmax
@@ -106,15 +107,14 @@ class OGN(GN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
                        
-    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            criterion = torch.nn.HuberLoss()
-            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return criterion(g.y, predicted)
+	    diff = g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)
+	    return torch.sum(F.smooth_l1_loss(diff, torch.zeros_like(diff), reduction='none', beta=delta))
 
 
 class varGN(MessagePassing):
@@ -196,15 +196,14 @@ class varOGN(varGN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
     
-    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            criterion = torch.nn.HuberLoss()
-            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return criterion(g.y, predicted)
+	    diff = g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)
+	    return torch.sum(F.smooth_l1_loss(diff, torch.zeros_like(diff), reduction='none', beta=delta))
 
 #Personalized Models:
 ###################################################################################################################################################################
@@ -279,15 +278,14 @@ class PM_GN(GN_plusminus):
                 x=x)
 
                        
-    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            criterion = torch.nn.HuberLoss()
-            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return criterion(g.y, predicted)
+	    diff = g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)
+	    return torch.sum(F.smooth_l1_loss(diff, torch.zeros_like(diff), reduction='none', beta=delta))
 
 
 class Custom_GN(MessagePassing):
@@ -371,15 +369,14 @@ class CUST_GN(Custom_GN):
                 x=x)
 
                        
-    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, **kwargs):
+    def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
             return torch.sum((g.y - self.just_derivative(g, augment=augment, augmentation=augmentation))**2)
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            criterion = torch.nn.HuberLoss()
-            predicted = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return criterion(g.y, predicted)
+	    diff = g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)
+	    return torch.sum(F.smooth_l1_loss(diff, torch.zeros_like(diff), reduction='none', beta=delta))
 
 
 
