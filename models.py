@@ -107,12 +107,13 @@ class OGN(GN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
 
-    def huber_loss(self, y_true, y_pred, delta):
-        residual = np.abs(y_true - y_pred)
+    def huber_loss(y_true, y_pred, delta=1.0):
+        residual = torch.abs(y_true - y_pred)
         condition = residual < delta
-        squared_loss = 0.5 * residual**2
+        squared_loss = 0.5 * torch.pow(residual, 2)
         linear_loss = delta * (residual - 0.5 * delta)
-        return np.where(condition, squared_loss, linear_loss)
+        loss = torch.where(condition, squared_loss, linear_loss)
+        return torch.sum(loss)
                        
     def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
@@ -120,8 +121,7 @@ class OGN(GN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return torch.sum(self.huber_loss(g.y, y_pred, delta))
+            return huber_loss(g.y, pred, delta=delta)
 
 
 class varGN(MessagePassing):
@@ -203,12 +203,13 @@ class varOGN(varGN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
     
-    def huber_loss(self, y_true, y_pred, delta):
-        residual = np.abs(y_true - y_pred)
+    def huber_loss(y_true, y_pred, delta=1.0):
+        residual = torch.abs(y_true - y_pred)
         condition = residual < delta
-        squared_loss = 0.5 * residual**2
+        squared_loss = 0.5 * torch.pow(residual, 2)
         linear_loss = delta * (residual - 0.5 * delta)
-        return np.where(condition, squared_loss, linear_loss)
+        loss = torch.where(condition, squared_loss, linear_loss)
+        return torch.sum(loss)
                        
     def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
@@ -216,8 +217,7 @@ class varOGN(varGN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return torch.sum(self.huber_loss(g.y, y_pred, delta))
+            return huber_loss(g.y, pred, delta=delta)
 
 #Personalized Models:
 ###################################################################################################################################################################
@@ -292,12 +292,13 @@ class PM_GN(GN_plusminus):
                 x=x)
 
                        
-    def huber_loss(self, y_true, y_pred, delta):
-        residual = np.abs(y_true - y_pred)
+    def huber_loss(y_true, y_pred, delta=1.0):
+        residual = torch.abs(y_true - y_pred)
         condition = residual < delta
-        squared_loss = 0.5 * residual**2
+        squared_loss = 0.5 * torch.pow(residual, 2)
         linear_loss = delta * (residual - 0.5 * delta)
-        return np.where(condition, squared_loss, linear_loss)
+        loss = torch.where(condition, squared_loss, linear_loss)
+        return torch.sum(loss)
                        
     def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
@@ -305,8 +306,7 @@ class PM_GN(GN_plusminus):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return torch.sum(self.huber_loss(g.y, y_pred, delta))
+            return huber_loss(g.y, pred, delta=delta)
 
 
 class Custom_GN(MessagePassing):
@@ -390,12 +390,13 @@ class CUST_GN(Custom_GN):
                 x=x)
 
                        
-    def huber_loss(self, y_true, y_pred, delta):
-        residual = np.abs(y_true - y_pred)
+    def huber_loss(y_true, y_pred, delta=1.0):
+        residual = torch.abs(y_true - y_pred)
         condition = residual < delta
-        squared_loss = 0.5 * residual**2
+        squared_loss = 0.5 * torch.pow(residual, 2)
         linear_loss = delta * (residual - 0.5 * delta)
-        return np.where(condition, squared_loss, linear_loss)
+        loss = torch.where(condition, squared_loss, linear_loss)
+        return torch.sum(loss)
                        
     def loss(self, g, loss_type= 'MAE', augment=True, augmentation=3, delta=1.0, **kwargs):
         if loss_type == 'MSE':
@@ -403,5 +404,4 @@ class CUST_GN(Custom_GN):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-            y_pred = self.just_derivative(g, augment=augment, augmentation=augmentation)
-            return torch.sum(self.huber_loss(g.y, y_pred, delta))
+            return huber_loss(g.y, pred, delta=delta)
