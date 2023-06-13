@@ -107,7 +107,7 @@ class OGN(GN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
 
-    def huber_loss(y_true, y_pred, delta):
+    def huber_loss(self, y_true, y_pred, delta):
         residual = np.abs(y_true - y_pred)
         condition = residual < delta
         squared_loss = 0.5 * residual**2
@@ -203,7 +203,7 @@ class varOGN(varGN):
                 edge_index, size=(x.size(0), x.size(0)),
                 x=x)
     
-    def huber_loss(y_true, y_pred, delta):
+    def huber_loss(self, y_true, y_pred, delta):
         residual = np.abs(y_true - y_pred)
         condition = residual < delta
         squared_loss = 0.5 * residual**2
@@ -292,7 +292,7 @@ class PM_GN(GN_plusminus):
                 x=x)
 
                        
-    def huber_loss(y_true, y_pred, delta):
+    def huber_loss(self, y_true, y_pred, delta):
         residual = np.abs(y_true - y_pred)
         condition = residual < delta
         squared_loss = 0.5 * residual**2
@@ -390,7 +390,7 @@ class CUST_GN(Custom_GN):
                 x=x)
 
                        
-    def huber_loss(y_true, y_pred, delta):
+    def huber_loss(self, y_true, y_pred, delta):
         residual = np.abs(y_true - y_pred)
         condition = residual < delta
         squared_loss = 0.5 * residual**2
