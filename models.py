@@ -322,7 +322,7 @@ class Custom_GN(MessagePassing):
         x = self.activation(x)
         inv = 1/self.msg_inverse(x)
         inv_quad = (1/(self.msg_inverse_quad(x))**2)
-        concat = torch.cat([inv, inv_quad], dim=1)#CONCATENARE inv e inv_quad in modo sensato: se hai settato hidden =100 allora avrai inv e inv_quad = N*100, dove N sono numero di punti che hai dato in input nel batch. Out deve avere dimensione N*200
+        concat = torch.cat([inv, inv_quad], dim=1)
         out = self.msg_out(concat)
         return out
     
