@@ -284,8 +284,8 @@ class PM_GN(GN_plusminus):
         if loss_type == 'MAE':
             return torch.sum(torch.abs(g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)))
         if loss_type == 'HUBER':
-	    diff = g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)
-	    return torch.sum(F.smooth_l1_loss(diff, torch.zeros_like(diff), reduction='none', beta=delta))
+            diff = g.y - self.just_derivative(g, augment=augment, augmentation=augmentation)
+            return torch.sum(F.smooth_l1_loss(diff, torch.zeros_like(diff), reduction='none', beta=delta))
 
 
 class Custom_GN(MessagePassing):
