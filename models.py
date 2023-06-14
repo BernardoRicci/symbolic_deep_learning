@@ -340,8 +340,8 @@ class Custom_GN(MessagePassing):
     def msg_fnc(self,x):
         x = self.msg_input_lin(x)
         x = self.activation(x)
-        inv = 1/self.msg_inverse(x)
-        inv_quad = (1/(self.msg_inverse_quad(x))**2)
+        inv = 1/self.msg_inverse(x+1)
+        inv_quad = (1/(self.msg_inverse_quad(x+1))**2)
         concat = torch.cat([inv, inv_quad], dim=1)
         out = self.msg_out(concat)
         return out
