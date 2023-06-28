@@ -32,3 +32,6 @@ For simulations:
 To train an example model from the paper, try out the [demo](https://colab.research.google.com/github/MilesCranmer/symbolic_deep_learning/blob/master/GN_Demo_Colab.ipynb).
 
 Full model definitions are given in `models.py`. Data is generated from `simulate.py`.
+
+Respect to the original `models.py`, now there are implemented 2 new GNN, called PM (Plus-Minus) and CUST (Custom).
+Instead `simulation.py` is not modified except for the memory allocation
