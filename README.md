@@ -1,4 +1,4 @@
-# [ORIGINAL PROJECT: Discovering Symbolic Models from Deep Learning with Inductive Biases](https://arxiv.org/abs/2006.11287)
+# [Discovering Symbolic Models from Deep Learning with Inductive Biases](https://arxiv.org/abs/2006.11287)
 
 This repository is forked from [the official repository](https://github.com/MilesCranmer/symbolic_deep_learning) of [Discovering Symbolic Models from Deep Learning with Inductive Biases](https://arxiv.org/abs/2006.11287). 
 
