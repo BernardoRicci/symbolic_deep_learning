@@ -33,5 +33,9 @@ To train an example model from the paper, try out the [demo](https://colab.resea
 
 Full model definitions are given in `models.py`. Data is generated from `simulate.py`.
 
-Respect to the original `models.py`, now there are implemented 2 new GNN, called PM (Plus-Minus) and CUST (Custom).
-Instead `simulation.py` is not modified except for the memory allocation
+Respect to the original `models.py`, now there are implemented 2 new GNN, called PM (Plus-Minus) and CUST (Custom). For all GNN Mean Squared Error (MSE), Mean Absolute Error (MAE) and Huber Loss (HUBER) are implemented.
+
+Instead `simulation.py` is not modified except for the memory allocation.
+
+## Code strucrute
+
