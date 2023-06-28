@@ -37,7 +37,7 @@ Respect to the original `models.py`, now there are implemented 2 new GNN, called
 
 Instead `simulation.py` is not modified except for the memory allocation.
 
-## Code strucrute
+## Code summary
 
 The project is divided as following:
 
@@ -49,4 +49,11 @@ The project is divided as following:
 - The training is analyzed;
 - Symbolic regression: PySR is used to obtain analytical expression of the force;
 - Conclusions and possible improvements.
+
+
+The model used are some from the original project (Bottleneck, L1, KL) and 2 new GNN.
+Simulations used are r1, r2 spring and charge.
+Available losses are MSE, MAE and Huber loss.
+
+You can customize your training with these possible choises.
 
