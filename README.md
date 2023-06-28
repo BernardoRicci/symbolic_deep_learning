@@ -18,7 +18,6 @@ Symbolic regression:
 For simulations:
 
 - [jax](https://github.com/google/jax) (simple N-body simulations)
-- [quijote](https://github.com/franciscovillaescusa/Quijote-simulations) (Dark matter data; optional)
 - tqdm
 - matplotlib
 
