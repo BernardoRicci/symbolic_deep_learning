@@ -46,9 +46,13 @@ The project is divided as following:
 - Conclusions and possible improvements.
 
 
-The model used are some from the original project (Bottleneck, L1, KL) and 2 new GNN.
+The model used are some from the original project (Bottleneck, L1, KL) and 2 new GNN: PM where dimensionality of layers change and CUST, where inverse operations are done.
+
 Simulations used are r1, r2 spring and charge.
+
 Available losses are MSE, MAE and Huber loss.
 
-You can customize your training with these possible choises.
+You can customize your training with these 60 possible choises.
 
+## Author
+Bernardo Ricci
