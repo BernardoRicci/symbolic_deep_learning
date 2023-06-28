@@ -39,3 +39,14 @@ Instead `simulation.py` is not modified except for the memory allocation.
 
 ## Code strucrute
 
+The project is divided as following:
+
+- Required packages are installed;
+- Data are generated with a simulation;
+- An explanation of models used is provided;
+- Dataset is prepared in Dataloader;
+- Training is done;
+- The training is analyzed;
+- Symbolic regression: PySR is used to obtain analytical expression of the force;
+- Conclusions and possible improvements.
+
