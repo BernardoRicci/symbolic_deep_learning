@@ -53,5 +53,10 @@ Available losses are MSE, MAE and Huber loss.
 
 You can customize your training with these 60 possible choises.
 
+## Implementations respect to the original work
+- Almost Correct Prediction Error Rate (ACPER)
+- Almost Correct Predicion Correct Rate (ACPCR)
+- Mean and Standard Deviations of messages components over epochs
+
 ## Author
 Bernardo Ricci
